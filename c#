@@ -1,0 +1,134 @@
+//QUESTION 1
+
+using System;
+
+class ElectricityBillCalculator
+{
+    static void Main()
+    {
+        Console.Write("Enter total units used: ");
+        string inputUnits = Console.ReadLine();
+        int unitCount = int.Parse(inputUnits);
+
+        const int RATE_TIER1 = 5;
+        const int RATE_TIER2 = 7;
+        const int RATE_TIER3 = 10;
+
+        int billAmount = 0;
+
+        if (unitCount <= 100)
+        {
+            billAmount = unitCount * RATE_TIER1;
+        }
+        else if (unitCount <= 200)
+        {
+            billAmount = (100 * RATE_TIER1) + ((unitCount - 100) * RATE_TIER2);
+        }
+        else
+        {
+            billAmount = (100 * RATE_TIER1) + (100 * RATE_TIER2) + ((unitCount - 200) * RATE_TIER3);
+        }
+
+        billAmount = Math.Abs(billAmount);
+
+        Console.WriteLine("Your electricity bill is: $" + billAmount);
+    }
+}
+
+
+
+//QUESTION 2
+
+using System;
+
+class MeterCustomer
+{
+    public int Id { get; set; }
+    public string FullName { get; set; }
+    public int UnitsUsed { get; set; }
+
+    public MeterCustomer(int customerId, string customerName, int usage)
+    {
+        Id = customerId;
+        FullName = customerName;
+        UnitsUsed = usage;
+    }
+
+    public void PrintBill()
+    {
+        int unitRate = 5;
+        int totalAmount = UnitsUsed * unitRate;
+
+        Console.WriteLine($"Customer Name: {FullName} (ID: {Id})");
+        Console.WriteLine($"Units Used: {UnitsUsed}");
+        Console.WriteLine($"Total Payable: ${totalAmount}");
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Console.Write("Enter Customer ID: ");
+        int custId = int.Parse(Console.ReadLine());
+
+        Console.Write("Enter Customer Name: ");
+        string custName = Console.ReadLine();
+
+        Console.Write("Enter Units Used: ");
+        int usage = int.Parse(Console.ReadLine());
+
+        MeterCustomer customer = new MeterCustomer(custId, custName, usage);
+        customer.PrintBill();
+    }
+}
+
+
+//QUESTION 3
+
+
+using System;
+
+class WeeklyConsumptionStats
+{
+    enum WeekDays { Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday }
+
+    public void ShowStatistics(int[] dailyUsage)
+    {
+        int totalUnits = 0;
+        int maxUsage = dailyUsage[0];
+        int peakDayIndex = 0;
+
+        for (int i = 0; i < dailyUsage.Length; i++)
+        {
+            totalUnits += dailyUsage[i];
+
+            if (dailyUsage[i] > maxUsage)
+            {
+                maxUsage = dailyUsage[i];
+                peakDayIndex = i;
+            }
+        }
+
+        double avgUnits = (double)totalUnits / dailyUsage.Length;
+
+        Console.WriteLine($"Weekly Total: {totalUnits} units");
+        Console.WriteLine($"Average per day: {avgUnits:F2} units");
+        Console.WriteLine($"Peak usage on: {((WeekDays)peakDayIndex)} ({maxUsage} units)");
+    }
+
+    static void Main()
+    {
+        int[] consumption = new int[7];
+
+        Console.WriteLine("Enter units used for each day (Mon to Sun):");
+
+        for (int i = 0; i < consumption.Length; i++)
+        {
+            consumption[i] = int.Parse(Console.ReadLine());
+        }
+
+        WeeklyConsumptionStats stats = new WeeklyConsumptionStats();
+        stats.ShowStatistics(consumption);
+    }
+}
