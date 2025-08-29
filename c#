@@ -277,3 +277,195 @@ class Program
 }
 
 
+//QUESTION 7
+
+using System;
+using System.Collections.Generic;
+
+class Program
+{
+    static void Main()
+    {
+       
+        List<List<int>> weeklyReadings = new List<List<int>>
+        {
+            new List<int> { 10, 15, 20 }, // Day 1
+            new List<int> { 12, 14, 22 }, // Day 2
+            new List<int> { 11, 16, 25 }, // Day 3
+            new List<int> { 13, 15, 24 },
+            new List<int> { 14, 18, 26 },
+            new List<int> { 15, 19, 23 },
+            new List<int> { 16, 20, 27 }
+        };
+
+        Console.WriteLine("Night Reading on Day 3: " + weeklyReadings[2][2]);
+
+       
+        Dictionary<string, Dictionary<string, List<int>>> areaData = new Dictionary<string, Dictionary<string, List<int>>>
+        {
+            {
+                "Area1", new Dictionary<string, List<int>>
+                {
+                    { "House1", new List<int> { 10, 12, 14, 16, 18, 20, 22 } },
+                    { "House2", new List<int> { 9, 11, 13, 15, 17, 19, 21 } }
+                }
+            }
+        };
+
+        Console.WriteLine("\nReadings for Area1 -> House1:");
+        foreach (var reading in areaData["Area1"]["House1"])
+        {
+            Console.Write(reading + " ");
+        }
+        Console.WriteLine();
+
+        
+        Dictionary<string, List<string>> areaMeters = new Dictionary<string, List<string>>
+        {
+            { "Downtown", new List<string> { "MTR001", "MTR002", "MTR003" } },
+            { "Uptown", new List<string> { "MTR101", "MTR102" } }
+        };
+
+        Console.WriteLine("\nMeters in Downtown:");
+        foreach (var meter in areaMeters["Downtown"])
+        {
+            Console.WriteLine(meter);
+        }
+
+        List<Dictionary<string, string>> complaints = new List<Dictionary<string, string>>
+        {
+            new Dictionary<string, string> { { "MeterNum", "MTR001" }, { "Issue", "No Reading" }, { "Date", "2025-08-28" } },
+            new Dictionary<string, string> { { "MeterNum", "MTR002" }, { "Issue", "Overbilling" }, { "Date", "2025-08-27" } }
+        };
+
+        Console.WriteLine("\nComplaints:");
+        foreach (var complaint in complaints)
+        {
+            Console.WriteLine($"Meter: {complaint["MeterNum"]}, Issue: {complaint["Issue"]}, Date: {complaint["Date"]}");
+        }
+    }
+}
+
+
+//QUESTION 8
+
+using System;
+using System.Collections.Generic;
+
+
+enum MeterStatus { Active, Inactive, Fault }
+
+
+struct Reading
+{
+    public DateTime Date;
+    public int Units;
+
+    public Reading(DateTime date, int units)
+    {
+        Date = date;
+        Units = units;
+    }
+}
+
+
+abstract class Notifier
+{
+    public abstract void SendMessage(string msg);
+}
+
+class SmsNotifier : Notifier
+{
+    public override void SendMessage(string msg)
+    {
+        Console.WriteLine("SMS Sent: " + msg);
+    }
+}
+
+class EmailNotifier : Notifier
+{
+    public override void SendMessage(string msg)
+    {
+        Console.WriteLine("Email Sent: " + msg);
+    }
+}
+
+
+class Meter
+{
+    public event Action<string> OnNewReadingAdded;
+    public MeterStatus Status { get; set; }
+
+    public List<Reading> Readings { get; } = new List<Reading>();
+
+    public void AddReading(Reading reading)
+    {
+        Readings.Add(reading);
+        OnNewReadingAdded?.Invoke($"New reading added: {reading.Units} units on {reading.Date.ToShortDateString()}");
+    }
+
+   
+    public class ReadingHistory
+    {
+        public List<Reading> AllReadings = new List<Reading>();
+    }
+}
+
+
+class Customer
+{
+    public string Name { get; set; }
+    public string? Email { get; set; }
+    public string Phone { get; set; }
+
+    public Notifier GetNotifier()
+    {
+        return Email != null ? new EmailNotifier() : new SmsNotifier();
+    }
+}
+
+
+static class Tariff
+{
+    public static int RatePerUnit = 6;
+}
+
+
+sealed class BillCalculator
+{
+    public static int CalculateBill(List<Reading> readings)
+    {
+        int totalUnits = 0;
+        foreach (var r in readings)
+            totalUnits += r.Units;
+
+        return totalUnits * Tariff.RatePerUnit;
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        
+        Customer customer1 = new Customer { Name = "Alice", Email = null, Phone = "1234567890" };
+        var notifier1 = customer1.GetNotifier();
+
+        
+        Meter meter = new Meter { Status = MeterStatus.Active };
+
+      
+        meter.OnNewReadingAdded += (msg) =>
+        {
+            notifier1.SendMessage(msg);
+        };
+
+        
+        meter.AddReading(new Reading(DateTime.Now.AddDays(-1), 20));
+        meter.AddReading(new Reading(DateTime.Now, 30));
+
+        
+        int bill = BillCalculator.CalculateBill(meter.Readings);
+        Console.WriteLine("\nGenerated Bill: $" + bill);
+    }
+}
