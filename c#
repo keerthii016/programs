@@ -469,3 +469,187 @@ class Program
         Console.WriteLine("\nGenerated Bill: $" + bill);
     }
 }
+
+
+//QUESTION 9
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace SimpleElectricityBilling
+{
+    // 1. Enum
+    public enum MeterStatus
+    {
+        Active,
+        Inactive,
+        Fault
+    }
+
+    // 2. Struct
+    public struct Reading
+    {
+        public DateTime Date;
+        public int Units;
+
+        public Reading(DateTime date, int units)
+        {
+            Date = date;
+            Units = units;
+        }
+    }
+
+    // 3. Abstract class and its derived classes
+    public abstract class Notifier
+    {
+        public abstract void SendMessage(string message);
+    }
+
+    public class SmsNotifier : Notifier
+    {
+        private string phone;
+
+        public SmsNotifier(string phone)
+        {
+            this.phone = phone;
+        }
+
+        public override void SendMessage(string message)
+        {
+            Console.WriteLine($"[SMS to {phone}]: {message}");
+        }
+    }
+
+    public class EmailNotifier : Notifier
+    {
+        private string email;
+
+        public EmailNotifier(string email)
+        {
+            this.email = email;
+        }
+
+        public override void SendMessage(string message)
+        {
+            Console.WriteLine($"[Email to {email}]: {message}");
+        }
+    }
+
+    // 6. Static class for tariff
+    public static class Tariff
+    {
+        public static decimal RatePerUnit = 6.0m;
+    }
+
+    // 7. Sealed class for bill calculation
+    public sealed class BillCalculator
+    {
+        public decimal Calculate(List<Reading> readings)
+        {
+            int totalUnits = readings.Sum(r => r.Units);
+            return totalUnits * Tariff.RatePerUnit;
+        }
+    }
+
+    // 8. Partial class: Profile and Contact
+    public partial class Customer
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+
+        public Customer(int id, string name)
+        {
+            Id = id;
+            Name = name;
+        }
+    }
+
+    public partial class Customer
+    {
+        public string? Email { get; set; }
+        public string? Phone { get; set; }
+
+        // 5. Null-coalescing usage
+        public Notifier GetNotifier()
+        {
+            return Email != null ? new EmailNotifier(Email) : new SmsNotifier(Phone ?? "Unknown");
+        }
+    }
+
+    // 4. Event + 9. Nested class
+    public class Meter
+    {
+        public int MeterId { get; set; }
+        public MeterStatus Status { get; set; }
+        public Customer Owner { get; set; }
+        private List<Reading> readings = new List<Reading>();
+
+        // Event triggered on new reading
+        public event Action<Reading>? ReadingAdded;
+
+        public Meter(int meterId, Customer owner)
+        {
+            MeterId = meterId;
+            Owner = owner;
+            Status = MeterStatus.Active;
+        }
+
+        public void AddReading(Reading reading)
+        {
+            readings.Add(reading);
+            ReadingAdded?.Invoke(reading); // Trigger event
+        }
+
+        public List<Reading> GetReadings() => readings;
+
+        // Nested class
+        public class ReadingHistory
+        {
+            public static void Show(List<Reading> readings)
+            {
+                Console.WriteLine("\n--- Reading History ---");
+                foreach (var r in readings)
+                {
+                    Console.WriteLine($"Date: {r.Date.ToShortDateString()}, Units: {r.Units}");
+                }
+            }
+        }
+    }
+
+    // Main Program
+    class Program
+    {
+        static void Main()
+        {
+            Console.WriteLine("=== Electricity Billing System ===\n");
+
+            // Create a customer with phone but no email
+            Customer customer = new Customer(1, "Alice")
+            {
+                Phone = "9876543210"
+            };
+
+            // Create a meter and attach event handler
+            Meter meter = new Meter(1001, customer);
+            meter.ReadingAdded += (reading) =>
+            {
+                var notifier = customer.GetNotifier();
+                notifier.SendMessage($"Reading added: {reading.Units} units on {reading.Date.ToShortDateString()}");
+            };
+
+            // Add readings
+            meter.AddReading(new Reading(DateTime.Now.AddDays(-2), 50));
+            meter.AddReading(new Reading(DateTime.Now, 70));
+            
+            // Show readings
+            Meter.ReadingHistory.Show(meter.GetReadings());
+
+            // Calculate bill
+            BillCalculator calc = new BillCalculator();
+            decimal amount = calc.Calculate(meter.GetReadings());
+
+            Console.WriteLine($"\nTotal Bill for {customer.Name}: ₹{amount}");
+        }
+    }
+}
